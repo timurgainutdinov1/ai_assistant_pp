@@ -1,0 +1,28 @@
+*.cursorignore
+*.env
+*.cursorrules
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+ai-assistant-pp/
+.cursor
+/__pycache__/
+
+# Streamlit secrets
+.streamlit/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+.DS_Store
