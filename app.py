@@ -5,8 +5,12 @@ import streamlit as st
 
 from compile_graph import graph
 from file_handler import extract_text_from_file
-from file_utils import (convert_markdown_to_html, convert_markdown_to_pdf,
-                        delete_files, save_file)
+from file_utils import (
+    convert_markdown_to_html,
+    convert_markdown_to_pdf,
+    delete_files,
+    save_file,
+)
 from prompt_manager import prompt_manager
 from ui_components import check_file_uploads, get_file_uploader, select_llm
 
@@ -14,7 +18,7 @@ from ui_components import check_file_uploads, get_file_uploader, select_llm
 def main():
     st.title("🤖 AI-ассистент куратора проектного практикума")
 
-    tab1, tab2 = st.tabs(["Проверка проектов", "Управление промптами"])
+    tab1, tab2 = st.tabs(["📋 Проверка проектов", "⚙️ Управление промптами"])
 
     with tab1:
         # Загружаем критерии по умолчанию
@@ -23,25 +27,29 @@ def main():
 
         # Загрузка файла паспорта проекта
         passport_file = get_file_uploader(
-            "Загрузите паспорт проекта (PDF/DOCX)", ["pdf", "docx"]
+            "📄 Загрузите паспорт проекта (PDF/DOCX)", ["pdf", "docx"]
         )
         # Загрузка файла отчета по проекту
         report_file = get_file_uploader(
-            "Загрузите отчет по проекту (PDF/DOCX)", ["pdf", "docx"]
+            "📝 Загрузите отчет по проекту (PDF/DOCX)", ["pdf", "docx"]
         )
 
-        with st.expander("Критерии проверки проектов (по умолчанию):", icon="📄"):
+        with st.expander("Критерии проверки проектов (по умолчанию):", icon="📋"):
             st.markdown(default_criteria)
 
         # Загрузка новых критериев для проверки,
         # если включен соответствующий переключатель
         new_criteria_file = (
             get_file_uploader(
-                "Загрузите критерии для проверки (TXT/PDF/DOCX)", ["txt", "pdf", "docx"]
+                "📋 Загрузите критерии для проверки (TXT/PDF/DOCX)",
+                ["txt", "pdf", "docx"],
             )
-            if st.toggle("Актуализировать критерии проверки проектов")
+            if st.toggle("🔄 Актуализировать критерии проверки проектов")
             else None
         )
+
+        # Опция для пропуска формирования обратной связи
+        skip_feedback = not st.toggle("💬 Формировать обратную связь", value=True)
 
         # Выбор модели LLM
         llm_choice = select_llm()
@@ -82,6 +90,7 @@ def main():
                         if new_criteria_file
                         else default_criteria
                     ),
+                    "skip_feedback": skip_feedback,
                 }
 
                 try:
@@ -97,10 +106,18 @@ def main():
                     check_result = graph.get_state(config=config).values[
                         "check_results"
                     ]
+                    # Получение обратной связи для студента (если не пропущено)
+                    feedback = (
+                        None
+                        if skip_feedback
+                        else graph.get_state(config=config).values.get("feedback")
+                    )
 
                     # Сохраняем результаты в session state
                     st.session_state.check_result = check_result
                     st.session_state.check_criteria = check_criteria
+                    if feedback:
+                        st.session_state.feedback = feedback
                     st.session_state.pdf_bytes = convert_markdown_to_pdf(check_result)
                     st.session_state.html_content = convert_markdown_to_html(
                         check_result
@@ -123,61 +140,70 @@ def main():
                     delete_files(list(saved_files.values()))
             else:
                 # Вывод ошибки, если отчет по проекту не загружен
-                st.error("Для запуска проверки необходимо загрузить отчет по проекту.")
+                st.error(
+                    "⚠️ Для запуска проверки необходимо загрузить отчет по проекту."
+                )
 
     with tab2:
         prompt_manager.render_prompt_editor()
 
     # Формат сохранения и кнопка скачивания
     if "check_result" in st.session_state:
+        with tab1:
+            st.header("📊 Результаты проверки")
+            # Отображение адаптированных критериев проверки
+            with st.expander("Адаптированные критерии проверки:", icon="📋"):
+                st.markdown(st.session_state.check_criteria)
 
-        st.header("Результаты проверки")
-        # Отображение адаптированных критериев проверки
-        with st.expander("Адаптированные критерии проверки:", icon="📄"):
-            st.markdown(st.session_state.check_criteria)
+            # Отображение результатов проверки
+            with st.expander("Результаты проверки:", icon="📝"):
+                st.markdown(st.session_state.check_result)
 
-        # Отображение результатов проверки
-        with st.expander("Результаты проверки:", icon="📄"):
-            st.markdown(st.session_state.check_result)
+            # Отображение обратной связи для студента (если не пропущено)
+            if "feedback" in st.session_state:
+                with st.expander("Обратная связь для студента:", icon="💬"):
+                    st.markdown(st.session_state.feedback)
 
-        # Формирование имен файлов для скачивания
-        file_name_base = (f"{st.session_state.llm_choice}_"
-                         f"{st.session_state.current_time}_"
-                         f"{st.session_state.report_file_name}")
-        
-        download_file_name_md = f"{file_name_base}_check_results.md"
-        download_file_name_pdf = f"{file_name_base}_check_results.pdf"
-        download_file_name_html = f"{file_name_base}_check_results.html"
-
-        # Выбор формата для сохранения
-        save_format = st.selectbox(
-            "Выберите формат для сохранения результатов:",
-            ["HTML", "PDF", "Markdown"],
-            index=0,
-        )
-
-        # Отображение кнопки скачивания в выбранном формате
-        if save_format == "HTML":
-            st.download_button(
-                label="Скачать результаты (HTML)",
-                data=st.session_state.html_content,
-                file_name=download_file_name_html,
-                mime="text/html",
+            # Формирование имен файлов для скачивания
+            file_name_base = (
+                f"{st.session_state.llm_choice}_"
+                f"{st.session_state.current_time}_"
+                f"{st.session_state.report_file_name}"
             )
-        elif save_format == "PDF":
-            st.download_button(
-                label="Скачать результаты (PDF)",
-                data=st.session_state.pdf_bytes,
-                file_name=download_file_name_pdf,
-                mime="application/pdf",
+
+            download_file_name_md = f"{file_name_base}_check_results.md"
+            download_file_name_pdf = f"{file_name_base}_check_results.pdf"
+            download_file_name_html = f"{file_name_base}_check_results.html"
+
+            # Выбор формата для сохранения
+            save_format = st.selectbox(
+                "💾 Выберите формат для сохранения результатов:",
+                ["HTML", "PDF", "Markdown"],
+                index=0,
             )
-        else:  # Markdown
-            st.download_button(
-                label="Скачать результаты (Markdown)",
-                data=st.session_state.check_result,
-                file_name=download_file_name_md,
-                mime="text/plain",
-            )
+
+            # Отображение кнопки скачивания в выбранном формате
+            if save_format == "HTML":
+                st.download_button(
+                    label="📥 Скачать результаты (HTML)",
+                    data=st.session_state.html_content,
+                    file_name=download_file_name_html,
+                    mime="text/html",
+                )
+            elif save_format == "PDF":
+                st.download_button(
+                    label="📥 Скачать результаты (PDF)",
+                    data=st.session_state.pdf_bytes,
+                    file_name=download_file_name_pdf,
+                    mime="application/pdf",
+                )
+            else:  # Markdown
+                st.download_button(
+                    label="📥 Скачать результаты (Markdown)",
+                    data=st.session_state.check_result,
+                    file_name=download_file_name_md,
+                    mime="text/plain",
+                )
 
 
 if __name__ == "__main__":

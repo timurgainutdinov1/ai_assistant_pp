@@ -4,6 +4,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 from llm_config import get_llm
 from prompt_manager import prompt_manager
+from prompts.feedback_forming import FEEDBACK_TEMPLATE
 
 
 def criteria_forming(state):
@@ -71,3 +72,26 @@ def report_check(state):
         )
         
         return {"check_results": res}
+    
+
+def feedback_forming(state):
+    """
+    Формирует дружелюбную обратную связь для студента на основе результатов проверки.
+
+    Args:
+        state (dict): Словарь состояния, содержащий:
+            - check_results (str): Результаты проверки отчета
+
+    Returns:
+        dict: Словарь с ключом 'feedback', содержащий сформированную обратную связь
+    """
+    with st.spinner("Формирование обратной связи..."):
+        prompt = ChatPromptTemplate.from_messages([("system", FEEDBACK_TEMPLATE)])
+        
+        chain = prompt | get_llm() | StrOutputParser()
+        
+        res = chain.invoke({
+            "check_results": state["check_results"]
+        })
+        
+        return {"feedback": res}
