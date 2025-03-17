@@ -42,11 +42,11 @@ LLM_CONFIG = {
         **OPENROUTER_BASE_CONFIG,
     },
     "Qwen 2.5 72B": {
-        "model": "qwen/qwen-2.5-72b-instruct:free",
+        "model": "qwen/qwen2.5-vl-72b-instruct:free",
         **OPENROUTER_BASE_CONFIG,
     },
     "Mistral Small 24B": {
-        "model": "mistralai/mistral-small-24b-instruct:free",
+        "model": "mistralai/mistral-small-24b-instruct-2501:free",
         **OPENROUTER_BASE_CONFIG,
     },
     "Reka Flash 3": {
