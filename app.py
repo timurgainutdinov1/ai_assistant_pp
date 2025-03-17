@@ -1,104 +1,19 @@
-import os
 import uuid
+from datetime import datetime
 
 import streamlit as st
 
 from compile_graph import graph
 from file_handler import extract_text_from_file
+from file_utils import (convert_markdown_to_html, convert_markdown_to_pdf,
+                        delete_files, save_file)
 from prompt_manager import prompt_manager
-
-
-def get_file_uploader(label, file_types):
-    """
-    Функция для загрузки файлов.
-
-    Args:
-        label (str): Метка для загрузчика файлов.
-        file_types (list): Список допустимых типов файлов.
-
-    Returns:
-        file: Загруженный файл.
-    """
-    return st.file_uploader(label, type=file_types)
-
-
-def check_file_uploads(passport, criteria):
-    """
-    Проверяет наличие файлов и выводит одно предупреждение,
-    если что-то отсутствует.
-
-    Args:
-        passport (file): Файл паспорта проекта.
-        criteria (file): Файл критериев проверки.
-    """
-    warnings = []
-    if passport is None:
-        warnings.append("паспорт проекта не загружен")
-    if criteria is None:
-        warnings.append("используются критерии проверки по умолчанию")
-    if warnings:
-        st.warning(f"Предупреждение: {', '.join(warnings)}.")
-
-
-def save_file(file, name=None):
-    """
-    Сохраняет загруженный файл с уникальным идентификатором.
-
-    Args:
-        file (file): Загруженный файл.
-        name (str, optional): Имя файла для сохранения.
-                              Если не указано,
-                              используется имя загруженного файла
-                              с уникальным идентификатором.
-
-    Returns:
-        str: Имя сохраненного файла.
-    """
-    unique_id = str(uuid.uuid4())
-    file_name = f"{unique_id}_{name if name else file.name}"
-    with open(file_name, "wb") as f:
-        f.write(file.getbuffer())
-    return file_name
-
-
-def delete_files(files):
-    """
-    Удаляет файлы после обработки.
-
-    Args:
-        files (list): Список файлов для удаления.
-    """
-    for file in files:
-        if file:
-            os.remove(file)
-
-
-def select_llm():
-    """
-    Выбор LLM.
-
-    Returns:
-        str: Выбранная LLM.
-    """
-    return st.selectbox(
-        "Выберите LLM:", [
-            "DeepSeek R1",
-            "DeepSeek Chat",
-            "Gemini 2.0 Pro",
-            "Gemma 3 27B",
-            "Gemini 2.0 Flash",
-            "Llama 3.3 70B Instruct",
-            "Qwen 32B",
-            "Qwen 2.5 72B",
-            "Mistral Small 24B"
-        ]
-    )
+from ui_components import check_file_uploads, get_file_uploader, select_llm
 
 
 def main():
-    st.title("AI-ассистент куратора проектного практикума")
+    st.title("🤖 AI-ассистент куратора проектного практикума")
 
-    # Add tabs for main functionality and prompt management
     tab1, tab2 = st.tabs(["Проверка проектов", "Управление промптами"])
 
     with tab1:
@@ -122,8 +37,7 @@ def main():
         # если включен соответствующий переключатель
         new_criteria_file = (
             get_file_uploader(
-                "Загрузите критерии для проверки (TXT/PDF/DOCX)",
-                ["txt", "pdf", "docx"]
+                "Загрузите критерии для проверки (TXT/PDF/DOCX)", ["txt", "pdf", "docx"]
             )
             if st.toggle("Актуализировать критерии проверки проектов")
             else None
@@ -184,13 +98,19 @@ def main():
                         "check_results"
                     ]
 
-                    # Отображение адаптированных критериев проверки
-                    with st.expander("Адаптированные критерии проверки:", icon="📄"):
-                        st.markdown(check_criteria)
+                    # Сохраняем результаты в session state
+                    st.session_state.check_result = check_result
+                    st.session_state.check_criteria = check_criteria
+                    st.session_state.pdf_bytes = convert_markdown_to_pdf(check_result)
+                    st.session_state.html_content = convert_markdown_to_html(
+                        check_result
+                    )
+                    st.session_state.report_file_name = report_file.name.split(".")[0]
+                    st.session_state.llm_choice = llm_choice
+                    st.session_state.current_time = datetime.now().strftime(
+                        "%Y%m%d_%H%M%S"
+                    )
 
-                    # Отображение результатов проверки
-                    with st.expander("Результаты проверки:", icon="📄"):
-                        st.markdown(check_result)
                 except Exception as e:
                     # Обработка ошибок при проверке
                     st.error(
@@ -200,13 +120,64 @@ def main():
                     st.exception(e)
                 finally:
                     # Удаление сохраненных файлов после обработки
-                    delete_files(saved_files.values())
+                    delete_files(list(saved_files.values()))
             else:
                 # Вывод ошибки, если отчет по проекту не загружен
                 st.error("Для запуска проверки необходимо загрузить отчет по проекту.")
 
     with tab2:
         prompt_manager.render_prompt_editor()
+
+    # Формат сохранения и кнопка скачивания
+    if "check_result" in st.session_state:
+
+        st.header("Результаты проверки")
+        # Отображение адаптированных критериев проверки
+        with st.expander("Адаптированные критерии проверки:", icon="📄"):
+            st.markdown(st.session_state.check_criteria)
+
+        # Отображение результатов проверки
+        with st.expander("Результаты проверки:", icon="📄"):
+            st.markdown(st.session_state.check_result)
+
+        # Формирование имен файлов для скачивания
+        file_name_base = (f"{st.session_state.llm_choice}_"
+                         f"{st.session_state.current_time}_"
+                         f"{st.session_state.report_file_name}")
+        
+        download_file_name_md = f"{file_name_base}_check_results.md"
+        download_file_name_pdf = f"{file_name_base}_check_results.pdf"
+        download_file_name_html = f"{file_name_base}_check_results.html"
+
+        # Выбор формата для сохранения
+        save_format = st.selectbox(
+            "Выберите формат для сохранения результатов:",
+            ["HTML", "PDF", "Markdown"],
+            index=0,
+        )
+
+        # Отображение кнопки скачивания в выбранном формате
+        if save_format == "HTML":
+            st.download_button(
+                label="Скачать результаты (HTML)",
+                data=st.session_state.html_content,
+                file_name=download_file_name_html,
+                mime="text/html",
+            )
+        elif save_format == "PDF":
+            st.download_button(
+                label="Скачать результаты (PDF)",
+                data=st.session_state.pdf_bytes,
+                file_name=download_file_name_pdf,
+                mime="application/pdf",
+            )
+        else:  # Markdown
+            st.download_button(
+                label="Скачать результаты (Markdown)",
+                data=st.session_state.check_result,
+                file_name=download_file_name_md,
+                mime="text/plain",
+            )
 
 
 if __name__ == "__main__":
