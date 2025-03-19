@@ -127,3 +127,22 @@ def convert_markdown_to_html(markdown_content):
         html_text
     )
     return html_template
+
+
+def save_uploaded_files(files_to_save):
+    """
+    Сохраняет загруженные файлы во временную директорию.
+
+    Args:
+        files_to_save (dict): Словарь с загруженными файлами, где ключ - 
+                             идентификатор файла, значение - объект файла.
+
+    Returns:
+        dict: Словарь с путями к сохраненным файлам, где ключ - идентификатор
+              файла, значение - путь к сохраненному файлу.
+    """
+    saved_files = {}
+    for key, file in files_to_save.items():
+        if file:
+            saved_files[key] = save_file(file)
+    return saved_files

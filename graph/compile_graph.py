@@ -3,7 +3,7 @@ from typing import Optional
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
-from graph_functions import criteria_forming, report_check, feedback_forming
+from graph.graph_functions import criteria_forming, report_check, feedback_forming
 
 
 class PPCheckState(MessagesState):

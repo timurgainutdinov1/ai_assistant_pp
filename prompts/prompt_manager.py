@@ -3,6 +3,7 @@ from typing import Dict, Optional
 
 import streamlit as st
 
+
 class PromptManager:
     """
     Класс для управления промптами в системе.
@@ -14,6 +15,7 @@ class PromptManager:
         prompts (Dict[str, str]): Словарь оригинальных промптов
         modified_prompts (Dict[str, str]): Словарь модифицированных промптов
     """
+
     def __init__(self):
         # Словари для хранения оригинальных и модифицированных промптов
         self.prompts: Dict[str, str] = {}
@@ -23,7 +25,7 @@ class PromptManager:
     def _load_prompts(self):
         """
         Загружает все промпты из директории prompts.
-        
+
         Читает .py файлы, извлекает строки шаблонов между тройными кавычками
         и сохраняет их в словарь prompts.
         """
@@ -81,7 +83,7 @@ class PromptManager:
     def render_prompt_editor(self):
         """
         Отображает интерфейс редактора промптов в Streamlit.
-        
+
         Позволяет пользователю:
         - Выбрать промпт для редактирования
         - Просмотреть/изменить содержимое промпта
@@ -89,28 +91,28 @@ class PromptManager:
         - Сбросить отдельный промпт или все промпты
         """
         st.subheader("Управление промптами")
-        
+
         # Выбор промпта для редактирования
         prompt_names = list(self.prompts.keys())
-        selected_prompt = st.selectbox("Выберите промпт для просмотра/редактирования", prompt_names)
-        
+        selected_prompt = st.selectbox(
+            "Выберите промпт для просмотра/редактирования", prompt_names
+        )
+
         if selected_prompt:
             current_prompt = self.get_prompt(selected_prompt)
             is_modified = selected_prompt in self.modified_prompts
-            
+
             # Показываем статус модификации
             if is_modified:
                 st.warning("⚠️ Промпт был изменен")
-            
+
             # Поле для редактирования
             new_prompt = st.text_area(
-                "Содержимое промпта",
-                value=current_prompt,
-                height=400
+                "Содержимое промпта", value=current_prompt, height=400
             )
-            
+
             col1, col2, col3 = st.columns(3)
-            
+
             # Кнопка сохранения изменений
             if col1.button("Сохранить изменения"):
                 if new_prompt != self.prompts[selected_prompt]:
@@ -119,16 +121,17 @@ class PromptManager:
                 else:
                     self.reset_prompt(selected_prompt)
                     st.info("ℹ️ Промпт вернулся к оригинальной версии")
-            
+
             # Кнопка сброса текущего промпта
             if is_modified and col2.button("Сбросить этот промпт"):
                 self.reset_prompt(selected_prompt)
                 st.rerun()
-            
+
             # Кнопка сброса всех промптов
             if self.modified_prompts and col3.button("Сбросить все промпты"):
                 self.reset_all_prompts()
                 st.rerun()
 
+
 # Global instance
-prompt_manager = PromptManager() 
+prompt_manager = PromptManager()

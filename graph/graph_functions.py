@@ -2,9 +2,8 @@ import streamlit as st
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-from llm_config import get_llm
-from prompt_manager import prompt_manager
-from prompts.feedback_forming import FEEDBACK_TEMPLATE
+from llm.llm_config import get_llm
+from prompts.prompt_manager import prompt_manager
 
 
 def criteria_forming(state):
@@ -26,9 +25,7 @@ def criteria_forming(state):
         return {"structured_criteria": state["criteria"]}
     with st.spinner("Адаптация критериев под проект..."):
         template = prompt_manager.get_prompt("CRITERIA_FORMING_TEMPLATE")
-        prompt = ChatPromptTemplate.from_messages(
-            [("system", template)]
-        )
+        prompt = ChatPromptTemplate.from_messages([("system", template)])
 
         chain = prompt | get_llm() | StrOutputParser()
 
@@ -58,9 +55,7 @@ def report_check(state):
     """
     with st.spinner("Проверка отчета..."):
         template = prompt_manager.get_prompt("CHECK_REPORT_TEMPLATE")
-        prompt = ChatPromptTemplate.from_messages(
-            [("system", template)]
-        )
+        prompt = ChatPromptTemplate.from_messages([("system", template)])
 
         chain = prompt | get_llm() | StrOutputParser()
 
@@ -70,9 +65,9 @@ def report_check(state):
                 "structured_criteria": state["structured_criteria"],
             }
         )
-        
+
         return {"check_results": res}
-    
+
 
 def feedback_forming(state):
     """
@@ -85,13 +80,12 @@ def feedback_forming(state):
     Returns:
         dict: Словарь с ключом 'feedback', содержащий сформированную обратную связь
     """
-    with st.spinner("Формирование обратной связи..."):
-        prompt = ChatPromptTemplate.from_messages([("system", FEEDBACK_TEMPLATE)])
-        
+    with st.spinner("Формирование обратной связи для студента..."):
+        template = prompt_manager.get_prompt("FEEDBACK_FORMING_TEMPLATE")
+        prompt = ChatPromptTemplate.from_messages([("system", template)])
+
         chain = prompt | get_llm() | StrOutputParser()
-        
-        res = chain.invoke({
-            "check_results": state["check_results"]
-        })
-        
+
+        res = chain.invoke({"check_results": state["check_results"]})
+
         return {"feedback": res}

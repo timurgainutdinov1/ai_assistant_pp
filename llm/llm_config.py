@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Type, Union
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -102,7 +102,7 @@ class LLMFactory:
     """Класс для создания экземпляров LLM моделей."""
 
     @staticmethod
-    def get_llm_classes() -> Dict[str, Type]:
+    def get_llm_classes() -> Dict[str, Type[Union[YandexGPT, GigaChat, ChatOpenAI]]]:
         """Возвращает словарь соответствия названий моделей и их классов."""
         return {
             "YandexGPT": YandexGPT,
