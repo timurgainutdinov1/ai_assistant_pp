@@ -1,6 +1,6 @@
 import json
 from typing import Dict
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 
 import s3fs
@@ -32,7 +32,7 @@ class S3Handler:
         """
         self.base_path = f"{self.bucket}/{path}"
 
-    async def log_check_run(self, file_name: str) -> None:
+    async def log_check_run(self, file_name: str, timestamp: str) -> None:
         """
         Записывает каждый успешный запуск проверки в файл 'logs.txt'
         с указанием текущего времени и имени файла отчета.
@@ -40,7 +40,8 @@ class S3Handler:
         Args:
             file_name: Имя проверяемого файла отчета
         """
-        log_entry = f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {file_name}\n"
+        
+        log_entry = f"{timestamp} - {file_name}\n"
         log_file_path = f"{self.bucket}/logs.txt"
         
         # Создаем файл, если он не существует
@@ -97,7 +98,7 @@ class S3Handler:
 
 
 
-async def save_to_s3(s3_handler, files_to_s3_save, report_file_name, results_json):
+async def save_to_s3(s3_handler, files_to_s3_save, report_file_name, results_json, timestamp):
     """
     Асинхронное сохранение файлов в S3.
 
@@ -109,7 +110,7 @@ async def save_to_s3(s3_handler, files_to_s3_save, report_file_name, results_jso
     """
     await asyncio.gather(
         s3_handler.save_files_to_s3(files_to_s3_save),
-        s3_handler.log_check_run(report_file_name),
+        s3_handler.log_check_run(report_file_name, timestamp),
         s3_handler.save_results_json_to_s3(results_json),
     )
 

@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import streamlit as st
 
@@ -86,7 +86,11 @@ def main():
                     # Обрабатываем результаты проверки
                     handle_check_results(config, graph, custom_criteria, skip_feedback)
                     st.session_state.report_file_name = report_file.name.split(".")[0]
-                    st.session_state.current_time = datetime.now().strftime(
+
+                    # Устанавливаем Московское время
+                    current_time = datetime.now() + timedelta(hours=3)
+
+                    st.session_state.current_time = current_time.strftime(
                         "%Y%m%d_%H%M%S"
                     )
 
@@ -151,6 +155,7 @@ def main():
                         files_to_s3_save,
                         st.session_state.report_file_name,
                         results_json,
+                        st.session_state.current_time,
                     )
                 )
 

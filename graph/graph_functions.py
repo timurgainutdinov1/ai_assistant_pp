@@ -4,8 +4,10 @@ from langchain_core.output_parsers import StrOutputParser
 
 from llm.llm_config import get_llm
 from prompts.prompt_manager import prompt_manager
+from tenacity import retry, stop_after_attempt
 
 
+@retry(stop=stop_after_attempt(3))
 def criteria_forming(state):
     """
     Адаптирует критерии оценки под конкретный проект.
@@ -41,6 +43,7 @@ def criteria_forming(state):
         return {"structured_criteria": res}
 
 
+@retry(stop=stop_after_attempt(3))
 def report_check(state):
     """
     Проверяет отчет на соответствие структурированным критериям.
@@ -69,6 +72,7 @@ def report_check(state):
         return {"check_results": res}
 
 
+@retry(stop=stop_after_attempt(3))
 def feedback_forming(state):
     """
     Формирует дружелюбную обратную связь для студента на основе результатов проверки.
