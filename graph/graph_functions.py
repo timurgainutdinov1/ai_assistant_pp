@@ -3,7 +3,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from llm.llm_config import get_llm
-from prompts.prompt_manager import prompt_manager
+from utils.prompt_manager import prompt_manager
 from tenacity import retry, stop_after_attempt
 
 

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import streamlit as st
 
 from graph.compile_graph import graph
-from prompts.prompt_manager import prompt_manager
+from utils.prompt_manager import prompt_manager
 from ui.ui_components import (check_file_uploads, create_criteria_section,
                               create_download_section, create_options_section,
                               create_project_upload_section,

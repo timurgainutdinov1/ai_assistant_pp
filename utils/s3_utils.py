@@ -6,7 +6,7 @@ import asyncio
 import s3fs
 import streamlit as st
 
-from prompts.prompt_manager import prompt_manager
+from utils.prompt_manager import prompt_manager
 
 
 class S3Handler:
