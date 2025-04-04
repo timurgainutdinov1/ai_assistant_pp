@@ -50,10 +50,10 @@ def select_llm():
     return st.selectbox(
         "Выберите LLM:",
         [
-            "GigaChat (Lite)",
-            "YandexGPT",
-            "DeepSeek R1",
+            # "GigaChat (Lite)",
             "DeepSeek Chat",
+            "DeepSeek R1",
+            "YandexGPT",
             "Gemini 2.0 Pro",
             "Gemma 3 27B",
             "Gemini 2.0 Flash",
