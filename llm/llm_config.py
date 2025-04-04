@@ -60,7 +60,7 @@ class LLMConfig:
                 **openrouter_config,
             },
             "DeepSeek Chat": {
-                "model": "deepseek/deepseek-chat:free",
+                "model": "deepseek/deepseek-chat-v3-0324:free",
                 **openrouter_config,
             },
             "Gemini 2.0 Pro": {
@@ -73,6 +73,10 @@ class LLMConfig:
             },
             "Gemini 2.0 Flash": {
                 "model": "google/gemini-2.0-flash-exp:free",
+                **openrouter_config,
+            },
+            "Gemini 2.5 Pro": {
+                "model": "google/gemini-2.5-pro-exp-03-25:free",
                 **openrouter_config,
             },
             "Qwen 32B": {
