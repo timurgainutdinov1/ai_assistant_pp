@@ -38,15 +38,15 @@ class S3Handler:
         Args:
             file_name: Имя проверяемого файла отчета
         """
-        
+
         log_entry = f"{timestamp} - {file_name}\n"
         log_file_path = f"{self.bucket}/logs.txt"
-        
+
         # Создаем файл, если он не существует
         # if not self.fs.exists(log_file_path):
         #     with self.fs.open(log_file_path, "w", encoding="utf-8") as f:
         #         f.write("")
-                
+
         with self.fs.open(log_file_path, "a", encoding="utf-8") as f:
             f.write(log_entry)
 
@@ -87,7 +87,6 @@ class S3Handler:
         results_json_path = f"{self.base_path}/results.json"
         with self.fs.open(results_json_path, "w", encoding="utf-8") as f:
             json.dump(results_json, f, ensure_ascii=False, indent=4)
-
 
 
 def save_to_s3(s3_handler, files_to_s3_save, report_file_name, results_json, timestamp):
@@ -131,5 +130,5 @@ def prepare_s3_files(files_to_save, check_result, check_criteria, feedback):
     # Добавляем обратную связь, если она была сгенерирована
     if feedback:
         files_to_s3_save["Обратная связь для студента.md"] = feedback.encode()
-        
+
     return files_to_s3_save

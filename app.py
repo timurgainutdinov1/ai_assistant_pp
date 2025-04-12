@@ -5,11 +5,15 @@ import streamlit as st
 
 from graph.compile_graph import graph
 from utils.prompt_manager import prompt_manager
-from ui.ui_components import (check_file_uploads, create_criteria_section,
-                              create_download_section, create_options_section,
-                              create_project_upload_section,
-                              create_results_section,
-                              create_user_feedback_form)
+from ui.ui_components import (
+    check_file_uploads,
+    create_criteria_section,
+    create_download_section,
+    create_options_section,
+    create_project_upload_section,
+    create_results_section,
+    create_user_feedback_form,
+)
 from utils.file_utils import delete_files, save_uploaded_files, extract_text_from_file
 from utils.results_handler import handle_check_results, prepare_results_json
 from utils.s3_utils import S3Handler, prepare_s3_files, save_to_s3
@@ -34,8 +38,11 @@ def main():
         st.session_state["llm_choice"] = llm_choice
 
         # Запрашиваем согласие на обработку файлов
-        consent = st.checkbox("Я согласен на обработку и хранение загруженных файлов для улучшения качества сервиса.", key="consent_checkbox")
-        
+        consent = st.checkbox(
+            "Я согласен на обработку и хранение загруженных файлов для улучшения качества сервиса.",
+            key="consent_checkbox",
+        )
+
         start_check = st.button("🔍 Проверить отчет", disabled=not consent)
 
         if start_check:
@@ -66,9 +73,7 @@ def main():
                         if passport_file
                         else ""
                     ),
-                    "report": (
-                        extract_text_from_file(saved_files.get("report", ""))
-                    ),
+                    "report": (extract_text_from_file(saved_files.get("report", ""))),
                     "criteria": (
                         extract_text_from_file(saved_files.get("criteria", ""))
                         if new_criteria_file
@@ -179,9 +184,7 @@ def main():
                 results_json["feedback_from_user"]["rating"] = mark
                 results_json["feedback_from_user"]["comment"] = comment
                 with st.spinner("Сохранение обратной связи..."):
-                    st.session_state.s3_handler.save_results_json_to_s3(
-                        results_json
-                    )
+                    st.session_state.s3_handler.save_results_json_to_s3(results_json)
                 st.success("Благодарим за обратную связь!")
 
             # Формируем имя файла для скачивания результатов

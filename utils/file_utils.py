@@ -7,8 +7,7 @@ from fpdf import FPDF
 
 import logging
 
-from langchain_community.document_loaders import (Docx2txtLoader, PyPDFLoader,
-                                                  TextLoader)
+from langchain_community.document_loaders import Docx2txtLoader, PyPDFLoader, TextLoader
 
 
 def save_file(file, name=None):
@@ -139,7 +138,7 @@ def save_uploaded_files(files_to_save):
     Сохраняет загруженные файлы во временную директорию.
 
     Args:
-        files_to_save (dict): Словарь с загруженными файлами, где ключ - 
+        files_to_save (dict): Словарь с загруженными файлами, где ключ -
                              идентификатор файла, значение - объект файла.
 
     Returns:
