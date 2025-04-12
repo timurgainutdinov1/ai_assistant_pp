@@ -1,7 +1,5 @@
 import json
 from typing import Dict
-from datetime import datetime, timedelta
-import asyncio
 
 import s3fs
 import streamlit as st
@@ -32,7 +30,7 @@ class S3Handler:
         """
         self.base_path = f"{self.bucket}/{path}"
 
-    async def log_check_run(self, file_name: str, timestamp: str) -> None:
+    def log_check_run(self, file_name: str, timestamp: str) -> None:
         """
         Записывает каждый успешный запуск проверки в файл 'logs.txt'
         с указанием текущего времени и имени файла отчета.
@@ -52,7 +50,12 @@ class S3Handler:
         with self.fs.open(log_file_path, "a", encoding="utf-8") as f:
             f.write(log_entry)
 
-    async def save_files_to_s3(
+    def _save_file(self, file_path: str, content: bytes) -> None:
+        """Вспомогательный метод для сохранения одного файла в S3"""
+        with self.fs.open(file_path, "wb") as f:
+            f.write(content)
+
+    def save_files_to_s3(
         self,
         files: Dict[str, bytes],
     ) -> None:
@@ -62,23 +65,12 @@ class S3Handler:
         Args:
             files: Словарь с файлами для сохранения
         """
-        # Создаем задачи для сохранения всех файлов
-        tasks = []
         for file_type, content in files.items():
             if content:
                 file_path = f"{self.base_path}/{file_type}"
-                tasks.append(self._save_file(file_path, content))
-        
-        # Выполняем все сохранения параллельно
-        if tasks:
-            await asyncio.gather(*tasks)
+                self._save_file(file_path, content)
 
-    async def _save_file(self, file_path: str, content: bytes) -> None:
-        """Вспомогательный метод для сохранения одного файла в S3"""
-        with self.fs.open(file_path, "wb") as f:
-            f.write(content)
-
-    async def save_results_json_to_s3(self, results_json: Dict) -> None:
+    def save_results_json_to_s3(self, results_json: Dict) -> None:
         """
         Сохраняет все результаты в S3 в виде json.
 
@@ -98,9 +90,9 @@ class S3Handler:
 
 
 
-async def save_to_s3(s3_handler, files_to_s3_save, report_file_name, results_json, timestamp):
+def save_to_s3(s3_handler, files_to_s3_save, report_file_name, results_json, timestamp):
     """
-    Асинхронное сохранение файлов в S3.
+    Cохранение файлов в S3.
 
     Args:
         s3_handler: Объект для работы с S3
@@ -108,11 +100,9 @@ async def save_to_s3(s3_handler, files_to_s3_save, report_file_name, results_jso
         report_file_name: Имя файла отчета
         results_json: JSON с результатами проверки
     """
-    await asyncio.gather(
-        s3_handler.save_files_to_s3(files_to_s3_save),
-        s3_handler.log_check_run(report_file_name, timestamp),
-        s3_handler.save_results_json_to_s3(results_json),
-    )
+    s3_handler.log_check_run(report_file_name, timestamp)
+    s3_handler.save_files_to_s3(files_to_s3_save)
+    s3_handler.save_results_json_to_s3(results_json)
 
 
 def prepare_s3_files(files_to_save, check_result, check_criteria, feedback):

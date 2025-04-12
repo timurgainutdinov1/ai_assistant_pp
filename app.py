@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from datetime import datetime, timedelta
 
@@ -11,8 +10,7 @@ from ui.ui_components import (check_file_uploads, create_criteria_section,
                               create_project_upload_section,
                               create_results_section,
                               create_user_feedback_form)
-from utils.file_handler import extract_text_from_file
-from utils.file_utils import delete_files, save_uploaded_files
+from utils.file_utils import delete_files, save_uploaded_files, extract_text_from_file
 from utils.results_handler import handle_check_results, prepare_results_json
 from utils.s3_utils import S3Handler, prepare_s3_files, save_to_s3
 
@@ -150,14 +148,12 @@ def main():
                 st.session_state.s3_handler.set_base_path(st.session_state.folder_name)
 
             with st.spinner("Сохранение результатов..."):
-                asyncio.run(
-                    save_to_s3(
-                        st.session_state.s3_handler,
-                        files_to_s3_save,
-                        st.session_state.report_file_name,
-                        results_json,
-                        st.session_state.current_time,
-                    )
+                save_to_s3(
+                    st.session_state.s3_handler,
+                    files_to_s3_save,
+                    st.session_state.report_file_name,
+                    results_json,
+                    st.session_state.current_time,
                 )
 
             # Отмечаем, что сохранение в S3 завершено
@@ -183,10 +179,8 @@ def main():
                 results_json["feedback_from_user"]["rating"] = mark
                 results_json["feedback_from_user"]["comment"] = comment
                 with st.spinner("Сохранение обратной связи..."):
-                    asyncio.run(
-                        st.session_state.s3_handler.save_results_json_to_s3(
-                            results_json
-                        )
+                    st.session_state.s3_handler.save_results_json_to_s3(
+                        results_json
                     )
                 st.success("Благодарим за обратную связь!")
 
