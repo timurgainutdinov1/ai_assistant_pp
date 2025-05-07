@@ -1,9 +1,9 @@
 from typing import Optional
 
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
-from graph.graph_functions import criteria_forming, report_check, feedback_forming
+from cli.graph.graph_functions import (criteria_forming, feedback_forming,
+                                       report_check)
 
 
 class PPCheckState(MessagesState):
@@ -40,5 +40,4 @@ builder.add_conditional_edges(
 )
 builder.add_edge("Преподаватель", END)
 
-memory = MemorySaver()
-graph = builder.compile(checkpointer=memory)
+graph = builder.compile()

@@ -31,16 +31,11 @@ class PromptManager:
         """
         prompts_dir = "prompts"
         for file in os.listdir(prompts_dir):
-            if file.endswith(".py"):
+            if file.endswith(".txt"):
                 with open(os.path.join(prompts_dir, file), "r", encoding="utf-8") as f:
                     content = f.read()
-                    # Извлекаем строку шаблона между тройными кавычками
-                    start = content.find('"""') + 3
-                    end = content.rfind('"""')
-                    if start > 2 and end > start:
-                        template = content[start:end].strip()
-                        prompt_name = file[:-3].upper() + "_TEMPLATE"
-                        self.prompts[prompt_name] = template
+                    prompt_name = os.path.splitext(file)[0].upper() + "_TEMPLATE"
+                    self.prompts[prompt_name] = content
 
     def get_prompt(self, prompt_name: str) -> Optional[str]:
         """

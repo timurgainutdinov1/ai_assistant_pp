@@ -57,7 +57,7 @@ def select_llm():
             # "Gemini 2.0 Pro",
             # "Gemini 2.5 Pro",
             # "Gemma 3 27B",
-            # "Gemini 2.0 Flash",
+            "Gemini 2.0 Flash",
             # "Llama 3.3 70B Instruct",
             # "Qwen 32B",
             # "Qwen 2.5 72B",

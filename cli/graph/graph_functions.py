@@ -1,13 +1,13 @@
-import streamlit as st
+import os
+
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-from llm.llm_config import get_llm
-from utils.prompt_manager import prompt_manager
-from tenacity import retry, stop_after_attempt
+from cli.llm.llm_config import get_llm
 
 
-@retry(stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=15))
 def criteria_forming(state):
     """
     Адаптирует критерии оценки под конкретный проект.
@@ -24,25 +24,32 @@ def criteria_forming(state):
     """
     if not state["passport"]:
         return {"structured_criteria": state["criteria"]}
-    with st.spinner("Адаптация критериев под проект..."):
-        template = prompt_manager.get_prompt("CRITERIA_FORMING_TEMPLATE")
-        prompt = ChatPromptTemplate.from_messages([("system", template)])
 
-        chain = prompt | get_llm() | StrOutputParser()
+    project_dir = os.environ["PROJECT_DIR"]
+    with open(
+        os.path.join(project_dir, "prompts", "criteria_forming.txt"),
+        "r",
+        encoding="utf-8",
+    ) as file:
+        template = file.read()
 
-        structured_criteria = state.get("structured_criteria", "")
-        res = chain.invoke(
-            {
-                "passport": state["passport"],
-                "criteria": state["criteria"],
-                "structured_criteria": structured_criteria,
-            }
-        )
+    prompt = ChatPromptTemplate.from_messages([("system", template)])
 
-        return {"structured_criteria": res}
+    chain = prompt | get_llm() | StrOutputParser()
+
+    structured_criteria = state.get("structured_criteria", "")
+    res = chain.invoke(
+        {
+            "passport": state["passport"],
+            "criteria": state["criteria"],
+            "structured_criteria": structured_criteria,
+        }
+    )
+
+    return {"structured_criteria": res}
 
 
-@retry(stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=15))
 def report_check(state):
     """
     Проверяет отчет на соответствие структурированным критериям.
@@ -55,23 +62,27 @@ def report_check(state):
     Returns:
         dict: Словарь с ключом 'check_results', содержащий результаты проверки
     """
-    with st.spinner("Проверка отчета..."):
-        template = prompt_manager.get_prompt("CHECK_REPORT_TEMPLATE")
-        prompt = ChatPromptTemplate.from_messages([("system", template)])
+    project_dir = os.environ["PROJECT_DIR"]
+    with open(
+        os.path.join(project_dir, "prompts", "check_report.txt"), "r", encoding="utf-8"
+    ) as file:
+        template = file.read()
 
-        chain = prompt | get_llm() | StrOutputParser()
+    prompt = ChatPromptTemplate.from_messages([("system", template)])
 
-        res = chain.invoke(
-            {
-                "report": state["report"],
-                "structured_criteria": state["structured_criteria"],
-            }
-        )
+    chain = prompt | get_llm() | StrOutputParser()
 
-        return {"check_results": res}
+    res = chain.invoke(
+        {
+            "report": state["report"],
+            "structured_criteria": state["structured_criteria"],
+        }
+    )
+
+    return {"check_results": res}
 
 
-@retry(stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=15))
 def feedback_forming(state):
     """
     Формирует дружелюбную обратную связь для студента на основе результатов проверки.
@@ -83,12 +94,18 @@ def feedback_forming(state):
     Returns:
         dict: Словарь с ключом 'feedback', содержащий сформированную обратную связь
     """
-    with st.spinner("Формирование обратной связи для студента..."):
-        template = prompt_manager.get_prompt("FEEDBACK_FORMING_TEMPLATE")
-        prompt = ChatPromptTemplate.from_messages([("system", template)])
+    project_dir = os.environ["PROJECT_DIR"]
+    with open(
+        os.path.join(project_dir, "prompts", "feedback_forming.txt"),
+        "r",
+        encoding="utf-8",
+    ) as file:
+        template = file.read()
 
-        chain = prompt | get_llm() | StrOutputParser()
+    prompt = ChatPromptTemplate.from_messages([("system", template)])
 
-        res = chain.invoke({"check_results": state["check_results"]})
+    chain = prompt | get_llm() | StrOutputParser()
 
-        return {"feedback": res}
+    res = chain.invoke({"check_results": state["check_results"]})
+
+    return {"feedback": res}

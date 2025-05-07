@@ -1,0 +1,200 @@
+import logging
+import os
+from typing import Any, Dict, Optional, Type, Union
+
+import streamlit as st
+from dotenv import load_dotenv
+from langchain_community.llms import YandexGPT
+from langchain_gigachat import GigaChat
+from langchain_openai import ChatOpenAI
+
+# Загрузка переменных окружения
+load_dotenv(override=True)
+
+
+class LLMConfig:
+    """Класс для управления конфигурациями LLM моделей."""
+
+    @staticmethod
+    def get_openrouter_base_config() -> Dict[str, str]:
+        """Возвращает базовую конфигурацию для OpenRouter."""
+        return {
+            "api_key": os.getenv("OPENROUTER_API_KEY", ""),
+            "base_url": "https://openrouter.ai/api/v1",
+        }
+
+    @staticmethod
+    def get_yandex_config() -> Dict[str, str]:
+        """Возвращает конфигурацию для YandexGPT."""
+        return {
+            "api_key": os.getenv("YANDEX_API_KEY", ""),
+            "folder_id": os.getenv("YANDEX_FOLDER_ID", ""),
+        }
+
+    @staticmethod
+    def get_gigachat_config() -> Dict[str, str]:
+        """Возвращает конфигурацию для GigaChat."""
+        return {
+            "api_key": os.getenv("GIGACHAT_CREDENTIALS", ""),
+            "scope": os.getenv("GIGACHAT_API_PERS", ""),
+        }
+
+    @classmethod
+    def get_model_configs(cls) -> Dict[str, Dict[str, Any]]:
+        """Возвращает конфигурации для всех поддерживаемых моделей."""
+        openrouter_config = cls.get_openrouter_base_config()
+        yandex_config = cls.get_yandex_config()
+        gigachat_config = cls.get_gigachat_config()
+
+        return {
+            # Российские модели
+            "YandexGPT": {
+                "model": "yandexgpt",
+                **yandex_config,
+            },
+            "GigaChat": {
+                "model": "GigaChat",
+                **gigachat_config,
+            },
+            # Модели через OpenRouter
+            "DeepSeek R1": {
+                "model": "deepseek/deepseek-r1:free",
+                **openrouter_config,
+            },
+            "DeepSeek Chat": {
+                "model": "deepseek/deepseek-chat-v3-0324:free",
+                **openrouter_config,
+            },
+            "Gemini 2.0 Pro": {
+                "model": "google/gemini-2.0-pro-exp-02-05:free",
+                **openrouter_config,
+            },
+            "Llama 3.3 70B Instruct": {
+                "model": "meta-llama/llama-3.3-70b-instruct:free",
+                **openrouter_config,
+            },
+            "Gemini 2.0 Flash": {
+                "model": "google/gemini-2.0-flash-exp:free",
+                **openrouter_config,
+            },
+            "Gemini 2.5 Pro": {
+                "model": "google/gemini-2.5-pro-exp-03-25:free",
+                **openrouter_config,
+            },
+            "Qwen 32B": {
+                "model": "qwen/qwq-32b:free",
+                **openrouter_config,
+            },
+            "Gemma 3 27B": {
+                "model": "google/gemma-3-27b-it:free",
+                **openrouter_config,
+            },
+            "Qwen 2.5 72B": {
+                "model": "qwen/qwen2.5-vl-72b-instruct:free",
+                **openrouter_config,
+            },
+            "Mistral Small 24B": {
+                "model": "mistralai/mistral-small-24b-instruct-2501:free",
+                **openrouter_config,
+            },
+            "Reka Flash 3": {
+                "model": "rekaai/reka-flash-3:free",
+                **openrouter_config,
+            },
+        }
+
+
+class LLMFactory:
+    """Класс для создания экземпляров LLM моделей."""
+
+    @staticmethod
+    def get_llm_classes() -> Dict[str, Type[Union[YandexGPT, GigaChat, ChatOpenAI]]]:
+        """Возвращает словарь соответствия названий моделей и их классов."""
+        return {
+            "YandexGPT": YandexGPT,
+            "GigaChat": GigaChat,
+            **{
+                model: ChatOpenAI
+                for model in LLMConfig.get_model_configs().keys()
+                if model not in ["YandexGPT", "GigaChat"]
+            },
+        }
+
+    @classmethod
+    def create_llm(cls, model_name: str = "DeepSeek Chat") -> Optional[Any]:
+        """
+        Создает экземпляр LLM модели на основе выбора пользователя.
+
+        Args:
+            model_name: Название модели для создания.
+
+        Returns:
+            Экземпляр LLM модели или None в случае ошибки.
+        """
+        # Проверяем наличие необходимых ключей API в зависимости от модели
+        if model_name in ["YandexGPT"]:
+            if not os.getenv("YANDEX_API_KEY") or not os.getenv(
+                "YANDEX_FOLDER_ID"
+            ):
+                logging.error("⚠️ Отсутствуют YANDEX_API_KEY или YANDEX_FOLDER_ID в переменных окружения")
+                return None
+        elif model_name == "GigaChat":
+            if not os.getenv("GIGACHAT_CREDENTIALS") or not os.getenv(
+                "GIGACHAT_API_PERS"
+            ):
+                logging.error(
+                    "⚠️ Отсутствуют GIGACHAT_CREDENTIALS или GIGACHAT_API_PERS в переменных окружения"
+                )
+                return None
+        else:
+            if not os.getenv("OPENROUTER_API_KEY"):
+                logging.error(
+                    "⚠️ OPENROUTER_API_KEY не найден в переменных окружения. Пожалуйста, добавьте его в .env файл"
+                )
+                return None
+
+        model_configs = LLMConfig.get_model_configs()
+        llm_classes = cls.get_llm_classes()
+
+        config = model_configs.get(model_name, model_configs["DeepSeek Chat"])
+        llm_class = llm_classes.get(model_name, ChatOpenAI)
+
+        try:
+            if llm_class.__name__ == "ChatOpenAI":
+                return llm_class(
+                    model=config["model"],
+                    api_key=config["api_key"],
+                    base_url=config["base_url"],
+                    temperature=0,
+                )
+            elif llm_class.__name__ == "YandexGPT":
+                return llm_class(
+                    model=config["model"],
+                    api_key=config["api_key"],
+                    folder_id=config["folder_id"],
+                    temperature=0,
+                )
+            elif llm_class.__name__ == "GigaChat":
+                return llm_class(
+                    model=config["model"],
+                    access_token=config["api_key"],
+                    scope=config["scope"],
+                    temperature=0,
+                    verify_ssl_certs=False,
+                )
+        except Exception as e:
+            logging.error(f"Ошибка при инициализации LLM: {e}")
+            return None
+
+
+def get_llm() -> Optional[Any]:
+    """
+    Создает экземпляр LLM модели на основе выбора пользователя.
+
+    Returns:
+        Экземпляр LLM модели или None в случае ошибки.
+    """
+
+    model_name = os.environ.get("LLM_MODEL", "DeepSeek Chat")
+    logging.info(f"Используемая модель: {model_name}")
+    return LLMFactory.create_llm(model_name)

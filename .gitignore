@@ -6,11 +6,12 @@
 *.pyo
 *.pyd
 ai-assistant-pp/
+ai_assistant_pp/
 .cursor
 /__pycache__/
 
 # Streamlit secrets
-.streamlit/
+.streamlit/secrets.toml
 # Python
 __pycache__/
 *.py[cod]
@@ -23,6 +24,11 @@ ENV/
 # IDE
 .vscode/
 .idea/
+.trae/
 
 # Misc
 .DS_Store
+.gitignore
+cli/graph/old/
+ai_assistant_pp/
+test/

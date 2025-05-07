@@ -172,20 +172,18 @@ def extract_text_from_file(uploaded_file: str) -> str:
     """
     try:
         if uploaded_file.endswith(".docx"):
-            text = Docx2txtLoader(uploaded_file).load()[0].page_content
+            return Docx2txtLoader(uploaded_file).load()[0].page_content
         elif uploaded_file.endswith(".pdf"):
-            pages = PyPDFLoader(uploaded_file).load()
-            text = "\n".join(page.page_content for page in pages)
+            return PyPDFLoader(uploaded_file, mode='single').load()[0].page_content
         elif uploaded_file.endswith(".txt"):
-            text = (
+            return (
                 TextLoader(uploaded_file, autodetect_encoding=True)
                 .load()[0]
                 .page_content
             )
         else:
-            text = ""
-            logging.warning(f"Неподдерживаемый формат файла: {uploaded_file}")
-        return text
+            logging.error(f"Неподдерживаемый формат файла: {uploaded_file}")
+            raise ValueError(f"Неподдерживаемый формат файла: {uploaded_file}")
     except Exception as e:
         logging.error(f"Ошибка при чтении файла {uploaded_file}: {str(e)}")
-        return ""
+        raise e
