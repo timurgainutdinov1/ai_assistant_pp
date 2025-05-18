@@ -46,8 +46,12 @@ class LLMConfig:
 
         return {
             # Российские модели
-            "YandexGPT": {
-                "model": "yandexgpt",
+            "YandexGPT Pro": {
+                "model_uri": f"gpt://{yandex_config['folder_id']}/yandexgpt/latest",
+                **yandex_config,
+            },
+            "YandexGPT Lite": {
+                "model_uri": f"gpt://{yandex_config['folder_id']}/yandexgpt-lite/latest",
                 **yandex_config,
             },
             "GigaChat": {
@@ -109,12 +113,13 @@ class LLMFactory:
     def get_llm_classes() -> Dict[str, Type[Union[YandexGPT, GigaChat, ChatOpenAI]]]:
         """Возвращает словарь соответствия названий моделей и их классов."""
         return {
-            "YandexGPT": YandexGPT,
+            "YandexGPT Pro": YandexGPT,
+            "YandexGPT Lite": YandexGPT,
             "GigaChat": GigaChat,
             **{
                 model: ChatOpenAI
                 for model in LLMConfig.get_model_configs().keys()
-                if model not in ["YandexGPT", "GigaChat"]
+                if model not in ["YandexGPT Lite", "YandexGPT Pro", "GigaChat"]
             },
         }
 
@@ -130,7 +135,7 @@ class LLMFactory:
             Экземпляр LLM модели или None в случае ошибки.
         """
         # Проверяем наличие необходимых ключей API в зависимости от модели
-        if model_name in ["YandexGPT"]:
+        if model_name in ["YandexGPT Lite", "YandexGPT Pro"]:
             if not st.secrets.get("YANDEX_API_KEY") or not st.secrets.get(
                 "YANDEX_FOLDER_ID"
             ):
@@ -167,7 +172,7 @@ class LLMFactory:
                 )
             elif llm_class.__name__ == "YandexGPT":
                 return llm_class(
-                    model=config["model"],
+                    model_uri=config["model_uri"],
                     api_key=config["api_key"],
                     folder_id=config["folder_id"],
                     temperature=0,
