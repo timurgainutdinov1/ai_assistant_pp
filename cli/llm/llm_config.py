@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Any, Dict, Optional, Type, Union
+import random
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -18,8 +19,13 @@ class LLMConfig:
     @staticmethod
     def get_openrouter_base_config() -> Dict[str, str]:
         """Возвращает базовую конфигурацию для OpenRouter."""
+
+        openrouter_random_key_number = random.randint(1, 16)
+
         return {
-            "api_key": os.getenv("OPENROUTER_API_KEY", ""),
+            "api_key": os.getenv(
+                f"OPENROUTER_API_KEY_{openrouter_random_key_number}", ""
+            ),
             "base_url": "https://openrouter.ai/api/v1",
         }
 
@@ -151,12 +157,12 @@ class LLMFactory:
                     "⚠️ Отсутствуют GIGACHAT_CREDENTIALS или GIGACHAT_API_PERS в переменных окружения"
                 )
                 return None
-        else:
-            if not os.getenv("OPENROUTER_API_KEY"):
-                logging.error(
-                    "⚠️ OPENROUTER_API_KEY не найден в переменных окружения. Пожалуйста, добавьте его в .env файл"
-                )
-                return None
+        # else:
+        #     if not os.getenv("OPENROUTER_API_KEY"):
+        #         logging.error(
+        #             "⚠️ OPENROUTER_API_KEY не найден в переменных окружения. Пожалуйста, добавьте его в .env файл"
+        #         )
+        #         return None
 
         model_configs = LLMConfig.get_model_configs()
         llm_classes = cls.get_llm_classes()

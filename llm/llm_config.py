@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional, Type, Union
+import random
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -16,8 +17,11 @@ class LLMConfig:
     @staticmethod
     def get_openrouter_base_config() -> Dict[str, str]:
         """Возвращает базовую конфигурацию для OpenRouter."""
+
+        openrouter_random_key_number = random.randint(1, 16)
+
         return {
-            "api_key": st.secrets.get("OPENROUTER_API_KEY", ""),
+            "api_key": st.secrets.get(f"OPENROUTER_API_KEY_{openrouter_random_key_number}", ""),
             "base_url": "https://openrouter.ai/api/v1",
         }
 
@@ -149,12 +153,12 @@ class LLMFactory:
                     "⚠️ Отсутствуют GIGACHAT_CREDENTIALS или GIGACHAT_API_PERS в secrets"
                 )
                 return None
-        else:
-            if not st.secrets.get("OPENROUTER_API_KEY"):
-                st.error(
-                    "⚠️ OPENROUTER_API_KEY не найден в secrets. Пожалуйста, добавьте его в .streamlit/secrets.toml"
-                )
-                return None
+        # else:
+        #     if not st.secrets.get("OPENROUTER_API_KEY"):
+        #         st.error(
+        #             "⚠️ OPENROUTER_API_KEY не найден в secrets. Пожалуйста, добавьте его в .streamlit/secrets.toml"
+        #         )
+        #         return None
 
         model_configs = LLMConfig.get_model_configs()
         llm_classes = cls.get_llm_classes()
