@@ -1,5 +1,6 @@
-from typing import Any, Dict, Optional, Type, Union
+import logging
 import random
+from typing import Any, Dict, Optional, Type, Union
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -21,7 +22,9 @@ class LLMConfig:
         openrouter_random_key_number = random.randint(1, 16)
 
         return {
-            "api_key": st.secrets.get(f"OPENROUTER_API_KEY_{openrouter_random_key_number}", ""),
+            "api_key": st.secrets.get(
+                f"OPENROUTER_API_KEY_{openrouter_random_key_number}", ""
+            ),
             "base_url": "https://openrouter.ai/api/v1",
         }
 
@@ -143,22 +146,22 @@ class LLMFactory:
             if not st.secrets.get("YANDEX_API_KEY") or not st.secrets.get(
                 "YANDEX_FOLDER_ID"
             ):
-                st.error("⚠️ Отсутствуют YANDEX_API_KEY или YANDEX_FOLDER_ID в secrets")
-                return None
+                logging.error(
+                    "⚠️ Отсутствуют YANDEX_API_KEY или YANDEX_FOLDER_ID в secrets"
+                )
+                raise ValueError(
+                    "Отсутствуют YANDEX_API_KEY или YANDEX_FOLDER_ID в secrets"
+                )
         elif model_name == "GigaChat":
             if not st.secrets.get("GIGACHAT_CREDENTIALS") or not st.secrets.get(
                 "GIGACHAT_API_PERS"
             ):
-                st.error(
+                logging.error(
                     "⚠️ Отсутствуют GIGACHAT_CREDENTIALS или GIGACHAT_API_PERS в secrets"
                 )
-                return None
-        # else:
-        #     if not st.secrets.get("OPENROUTER_API_KEY"):
-        #         st.error(
-        #             "⚠️ OPENROUTER_API_KEY не найден в secrets. Пожалуйста, добавьте его в .streamlit/secrets.toml"
-        #         )
-        #         return None
+                raise ValueError(
+                    "Отсутствуют GIGACHAT_CREDENTIALS или GIGACHAT_API_PERS в secrets"
+                )
 
         model_configs = LLMConfig.get_model_configs()
         llm_classes = cls.get_llm_classes()
@@ -190,8 +193,8 @@ class LLMFactory:
                     verify_ssl_certs=False,
                 )
         except Exception as e:
-            st.error(f"Ошибка при инициализации LLM: {e}")
-            return None
+            logging.error(f"Ошибка при инициализации LLM: {e}")
+            raise e
 
 
 def get_llm() -> Optional[Any]:

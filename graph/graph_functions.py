@@ -1,10 +1,12 @@
+import time
+
 import streamlit as st
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from tenacity import retry, stop_after_attempt
 
 from llm.llm_config import get_llm
 from utils.prompt_manager import prompt_manager
-from tenacity import retry, stop_after_attempt
 
 
 @retry(stop=stop_after_attempt(3))
@@ -23,6 +25,7 @@ def criteria_forming(state):
               адаптированные критерии
     """
     if not state["passport"]:
+        st.session_state["structuring_criteria_duration"] = 0
         return {"structured_criteria": state["criteria"]}
     with st.spinner("Адаптация критериев под проект..."):
         template = prompt_manager.get_prompt("CRITERIA_FORMING_TEMPLATE")
@@ -31,6 +34,7 @@ def criteria_forming(state):
         chain = prompt | get_llm() | StrOutputParser()
 
         structured_criteria = state.get("structured_criteria", "")
+        start_time = time.time()
         res = chain.invoke(
             {
                 "passport": state["passport"],
@@ -38,6 +42,8 @@ def criteria_forming(state):
                 "structured_criteria": structured_criteria,
             }
         )
+        end_time = time.time()
+        st.session_state["structuring_criteria_duration"] = end_time - start_time
 
         return {"structured_criteria": res}
 
@@ -61,13 +67,15 @@ def report_check(state):
 
         chain = prompt | get_llm() | StrOutputParser()
 
+        start_time = time.time()
         res = chain.invoke(
             {
                 "report": state["report"],
                 "structured_criteria": state["structured_criteria"],
             }
         )
-
+        end_time = time.time()
+        st.session_state["checking_report_duration"] = end_time - start_time
         return {"check_results": res}
 
 
@@ -89,6 +97,9 @@ def feedback_forming(state):
 
         chain = prompt | get_llm() | StrOutputParser()
 
+        start_time = time.time()
         res = chain.invoke({"check_results": state["check_results"]})
+        end_time = time.time()
+        st.session_state["feedback_forming_duration"] = end_time - start_time
 
         return {"feedback": res}

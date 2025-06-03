@@ -177,7 +177,7 @@ def extract_text_from_file(uploaded_file: str) -> str:
             return PyPDFLoader(uploaded_file, mode='single').load()[0].page_content
         elif uploaded_file.endswith(".txt"):
             return (
-                TextLoader(uploaded_file, autodetect_encoding=True)
+                TextLoader(uploaded_file, encoding="utf-8", autodetect_encoding=True)
                 .load()[0]
                 .page_content
             )
